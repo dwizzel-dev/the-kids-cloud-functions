@@ -1,0 +1,26 @@
+service cloud.firestore {
+    match /databases/{database}/documents {
+        match /users/{userId} {
+            allow read, write: if request.auth.uid == userId;
+            match /watchers/{document=**} {
+                allow read, write;
+            }
+            match /watchings/{document=**} {
+                allow read, write;
+            }
+            match /invitations/{document=**} {
+                allow read, write;
+            }
+        }
+        match /actives/{anyDocument} {
+            allow read : if request.auth.uid != null;
+        }
+        match /actives/{userId} {
+            allow read, write : if request.auth.uid == userId;
+        }
+         match /invites/{anyDocument} {
+            allow read, write: if request.auth.uid != null;
+            
+        }
+    }
+}
