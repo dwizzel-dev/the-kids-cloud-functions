@@ -18,9 +18,14 @@ service cloud.firestore {
         match /actives/{userId} {
             allow read, write : if request.auth.uid == userId;
         }
-         match /invites/{anyDocument} {
+        match /invites/{anyDocument} {
             allow read, write: if request.auth.uid != null;
-            
+            match /infos/{userId} {
+                allow write: if request.auth.uid == userId;
+            }
+            match /state/{userId} {
+                allow write: if request.auth.uid == userId;
+            }
         }
     }
 }

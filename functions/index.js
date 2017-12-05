@@ -93,12 +93,86 @@ exports.createInvitation = functions.firestore
 	});
 
 exports.activateInvitation = functions.firestore
+	.document('invites/{inviteId}/state/{userId}')
+	.onCreate((event) => {
+	    //le userID de celui qui accepte l'invitation
+        const userA = event.params.userId; //2UT3SOpMxPOfAPrTFUwWTswAA0l1
+        if(userA == null || userA == ""){
+            return false;
+        }
+        //le userID de celui qui a envoye l'invitation
+        //le inviteId
+        const inviteId = event.params.inviteId; //PC6L4STvnhjqpI3Y94az
+        const userB = event.data.data().from; //0CDFrsffJKbmVnU2St3NIQd0yOe2
+        if(userB == null || userB == "" || inviteId == null || inviteId == ""){
+            return false;
+        }
+        //sinon
+        //on va chercher les infos de l'invitation
+        const invitesRef = db.collection('invites').doc(inviteId); 
+        const userRefA = db.collection('users').doc(userA);
+        const userRefB = db.collection('users').doc(userB);
+        //get l'invitations
+        return userRefB.collection('invitations').doc(inviteId)
+            .get()
+            .then((doc) => {
+                let data = doc.data();
+                console.log("get invitation: " + inviteId);
+                return {
+                    name: data.name,
+                    email: data.email,
+                    phone: data.phone,
+                    uid: userA,
+                    gps: false,
+                    status: 0,
+                    position: new admin.firestore.GeoPoint(0.0, 0.0),
+                    updateTime: admin.firestore.FieldValue.serverTimestamp()
+                };
+            })
+            .then((result) => {
+                console.log("set watchers: " + userB);
+                //on va setter le watchers du user B
+                return userRefB.collection('watchers').doc(userA).set(result);
+            })
+            .then(() =>{
+                console.log("get infos: " + userA);
+                //on va chercher les infos rentrer par le userA
+                return invitesRef.collection('infos').doc(userA).get()
+                .then((doc) => {
+                    return doc.data()
+                });
+            })
+            .then((result) => {
+                console.log("set watchings: " + userA);
+                //on va setter le watching du user A
+                return userRefA.collection('watchings').doc(userB).set({
+                    name: result.name,
+                    email: result.email,
+                    phone: result.phone,
+                    uid: userB,
+                    gps: false,
+                    status: 0,
+                    position: new admin.firestore.GeoPoint(0.0, 0.0),
+                    updateTime: admin.firestore.FieldValue.serverTimestamp()
+                });
+            })
+            .then(() => {
+                console.log("delete users invitation: " + inviteId);
+                //on peut supprimer le invitation maintenant
+                return userRefB.collection('invitations').doc(inviteId).delete();
+            })
+            .then(() =>{
+                console.log("delete invites: " + inviteId);
+                //on peut supprimer le invite
+                return invitesRef.delete();
+            });
+	});
+
+
+/*
+exports.activateInvitation = functions.firestore
 	.document('invites/{inviteId}')
 	.onUpdate((event) => {
-	    /*
-	    var newValue = event.data.data();
-        var previousValue = event.data.previous.data();
-	    */
 	    //la seule chose qui est update c'est le "to:" car c'est le uid de celui qui a accepte
 		//le userID de celui qui accepte l'invitation
         const userA = event.data.data().to; //2UT3SOpMxPOfAPrTFUwWTswAA0l1
@@ -166,4 +240,4 @@ exports.activateInvitation = functions.firestore
                 return event.data.ref.delete();
             });
 	});
-
+*/
