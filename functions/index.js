@@ -95,7 +95,7 @@ exports.createInvitation = functions.firestore
 exports.activateInvitation = functions.firestore
 	.document('invites/{inviteId}/state/{userId}')
 	.onCreate((event) => {
-	    //le userID de celui qui accepte l'invitation
+        //le userID de celui qui accepte l'invitation
         const userA = event.params.userId; //2UT3SOpMxPOfAPrTFUwWTswAA0l1
         if(userA == null || userA == ""){
             return false;
@@ -138,9 +138,9 @@ exports.activateInvitation = functions.firestore
                 console.log("get infos: " + userA);
                 //on va chercher les infos rentrer par le userA
                 return invitesRef.collection('infos').doc(userA).get()
-                .then((doc) => {
-                    return doc.data()
-                });
+            })
+            .then((doc) => {
+                return doc.data();
             })
             .then((result) => {
                 console.log("set watchings: " + userA);
@@ -162,9 +162,17 @@ exports.activateInvitation = functions.firestore
                 return userRefB.collection('invitations').doc(inviteId).delete();
             })
             .then(() =>{
+                console.log("delete invites[infos]: " + inviteId);
+                //on peut supprimer le invite et les subcollections
+                return invitesRef.collection('infos').doc(userA).delete()
+            })
+            .then(() =>{
+                console.log("delete invites[state]: " + inviteId);
+                return invitesRef.collection('state').doc(userA).delete();
+            })
+            .then(() =>{
                 console.log("delete invites: " + inviteId);
-                //on peut supprimer le invite
-                return invitesRef.delete();
+                return invitesRef.delete();    
             });
 	});
 
